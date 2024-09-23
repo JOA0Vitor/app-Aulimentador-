@@ -9,9 +9,10 @@ void main() {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => HorarioProvider()),
-        ChangeNotifierProvider(create: (_) => ThemeProvider()), // Adicione o ThemeProvider
+        ChangeNotifierProvider(
+            create: (_) => ThemeProvider()), // Adicione o ThemeProvider
       ],
-      child: MyApp(),
+      child: const MyApp(),
     ),
   );
 }
@@ -34,12 +35,17 @@ class _MyAppState extends State<MyApp> {
       routeInformationParser: routes.routeInformationParser,
       routeInformationProvider: routes.routeInformationProvider,
       theme: ThemeData(
-        brightness: themeProvider.isDarkMode ? Brightness.dark : Brightness.light,
-        scaffoldBackgroundColor: themeProvider.isDarkMode ? Colors.black : Colors.white,
+        brightness:
+            themeProvider.isDarkMode ? Brightness.dark : Brightness.light,
+        scaffoldBackgroundColor:
+            themeProvider.isDarkMode ? Colors.black : Colors.white,
         primaryColor: themeProvider.isDarkMode ? Colors.grey[900] : Colors.blue,
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
-            foregroundColor: themeProvider.isDarkMode ? Colors.black : Colors.white, backgroundColor: themeProvider.isDarkMode ? Colors.white : Colors.blue,
+            foregroundColor:
+                themeProvider.isDarkMode ? Colors.black : Colors.white,
+            backgroundColor:
+                themeProvider.isDarkMode ? Colors.white : Colors.blue,
           ),
         ),
       ),

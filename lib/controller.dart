@@ -1,8 +1,7 @@
-
 import 'package:flutter/material.dart';
 
 class HorarioProvider with ChangeNotifier {
-  List<TimeOfDay> _horarios = [];
+  final List<TimeOfDay> _horarios = [];
 
   List<TimeOfDay> get horarios => _horarios;
 

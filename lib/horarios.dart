@@ -1,14 +1,39 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:aulimentador/controller.dart';
 import 'package:aulimentador/global_style.dart';
-import 'package:brasil_fields/brasil_fields.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 class Horarios extends StatefulWidget {
   const Horarios({super.key});
+
+  final String esp32ip =
+      'http://172.16.19.14'; // Substitua pelo endereço IP do seu ESP32
+
+  Future<void> enviarHorarios(List<TimeOfDay> horarios) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$esp32ip/horarios'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(horarios
+            .map((horario) => {
+                  'hour': horario.hour,
+                  'minute': horario.minute,
+                })
+            .toList()),
+      );
+      if (response.statusCode == 200) {
+        print('Horarios enviados com sucesso!');
+      } else {
+        print('Falha ao enviar horarios');
+      }
+    } catch (e) {
+      print('Erro ao enviar horarios: $e');
+    }
+  }
 
   @override
   State<Horarios> createState() => _HorariosState();
@@ -85,10 +110,12 @@ class _HorariosState extends State<Horarios> {
                             ),
                           ),
                         ),
-                        SizedBox(width: 5,),
+                        const SizedBox(
+                          width: 5,
+                        ),
                         GestureDetector(
                           onTap: () {
-                             showDialog<void>(
+                            showDialog<void>(
                               context: context,
                               builder: (BuildContext context) {
                                 return AlertDialog(
@@ -143,19 +170,19 @@ class _HorariosState extends State<Horarios> {
                             height: 55,
                             width: 55,
                             decoration: BoxDecoration(
-                              borderRadius: BorderRadius.all(Radius.circular(50)),
-                              color: customGrey
+                                borderRadius:
+                                    const BorderRadius.all(Radius.circular(50)),
+                                color: customGrey),
+                            child: Padding(
+                              padding: const EdgeInsets.all(16.0),
+                              child: SvgPicture.asset(
+                                'assets/icon/lixo.svg',
+                                colorFilter: ColorFilter.mode(
+                                    customWhite, BlendMode.srcIn),
+                                // width: 20,
+                                height: 30,
+                              ),
                             ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: SvgPicture.asset(
-                                  'assets/icon/lixo.svg',
-                                  colorFilter:
-                                      ColorFilter.mode(customWhite, BlendMode.srcIn),
-                                      // width: 20,
-                                      height: 30,
-                                ),
-                          ), 
                           ),
                         ),
                         // ElevatedButton.icon(

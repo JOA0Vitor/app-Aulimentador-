@@ -1,10 +1,9 @@
 import 'package:aulimentador/controller.dart';
 import 'package:aulimentador/global_style.dart';
-import 'package:brasil_fields/brasil_fields.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:http/http.dart' as http;
 
 class Home extends StatefulWidget {
   const Home({
@@ -16,6 +15,22 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
+  final String esp32ip =
+      'http://172.16.19.14'; // Substitua pelo endereço IP do seu ESP32
+
+  Future<void> openServo() async {
+    try {
+      final response = await http.get(Uri.parse('$esp32ip/open'));
+      if (response.statusCode == 200) {
+        print('Servo aberto');
+      } else {
+        print('Erro ao abrir o servo');
+      }
+    } catch (e) {
+      print('Erro ao abrir o servo: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final primeiroHorario = context.watch<HorarioProvider>().primeiroHorario;
@@ -101,14 +116,14 @@ class _HomeState extends State<Home> {
                       style: ElevatedButton.styleFrom(
                         fixedSize: const Size(75, 75),
                         elevation: 10,
-                          shadowColor: customWhite,
+                        shadowColor: customWhite,
                         backgroundColor: customGrey,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(50),
                         ),
                         padding: const EdgeInsets.all(4),
                       ),
-                      child:  Icon(
+                      child: Icon(
                         Icons.settings,
                         color: customWhite,
                         size: 55,
@@ -116,11 +131,11 @@ class _HomeState extends State<Home> {
                 ],
               ),
               ElevatedButton(
-                  onPressed: () {},
+                  onPressed: openServo,
                   style: ElevatedButton.styleFrom(
                     fixedSize: const Size(150, 150),
                     elevation: 10,
-                      shadowColor: customWhite,
+                    shadowColor: customWhite,
                     backgroundColor: customYellow,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(100),
