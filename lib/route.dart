@@ -8,7 +8,11 @@ final routes = GoRouter(
   initialLocation: '/home',
   routes: <RouteBase>[
     GoRoute(path: '/home', builder: ((context, state) => const Home())),
-    GoRoute(path: '/horarios', builder: ((context, state) => const Horarios())),
+    // GoRoute(path: '/horarios', builder: ((context, state) => const Horarios())),
+    GoRoute(
+      path: '/horarios',
+      builder: (context, state) => const Horarios(),
+    ),
   ],
 );
 

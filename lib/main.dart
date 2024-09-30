@@ -3,6 +3,7 @@ import 'package:aulimentador/global_style.dart';
 import 'package:aulimentador/route.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 void main() {
   runApp(
@@ -34,6 +35,15 @@ class _MyAppState extends State<MyApp> {
       routerDelegate: routes.routerDelegate,
       routeInformationParser: routes.routeInformationParser,
       routeInformationProvider: routes.routeInformationProvider,
+      supportedLocales: const [
+        Locale('pt', 'BR'),
+      ],
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      locale: const Locale('pt', 'BR'),
       theme: ThemeData(
         brightness:
             themeProvider.isDarkMode ? Brightness.dark : Brightness.light,

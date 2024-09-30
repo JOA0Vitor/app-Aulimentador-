@@ -6,6 +6,8 @@ Color customRed = Colors.red;
 Color customBlack = Colors.black;
 Color customYellow = const Color(0xFFF8BB15);
 Color customGrey = const Color(0xFF38454D);
+Color customGreyLightbg = const Color(0x21616161);
+
 Color? customGreyLight = Colors.grey[100];
 
 BorderSide customBorderSide = BorderSide(

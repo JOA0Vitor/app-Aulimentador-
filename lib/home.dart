@@ -31,11 +31,26 @@ class _HomeState extends State<Home> {
     }
   }
 
+  Future<void> powerOff() async {
+    try {
+      final response = await http.get(Uri.parse('$esp32ip/power_off'));
+      if (response.statusCode == 200) {
+        print('Servo desligar');
+      } else {
+        print('Erro ao desligar o servo');
+      }
+    } catch (e) {
+      print('Erro ao desligar o servo: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final primeiroHorario = context.watch<HorarioProvider>().primeiroHorario;
+    final isDarkMode = Provider.of<ThemeProvider>(context).isDarkMode;
 
     return Scaffold(
+      backgroundColor: isDarkMode ? customGrey : customWhite,
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 25.0),
         child: SingleChildScrollView(
@@ -52,30 +67,34 @@ class _HomeState extends State<Home> {
                       .toggleTheme();
                 },
                 child: Image.asset(
-                  'assets/images/logo.png',
+                  isDarkMode
+                      ? 'assets/images/logo_dark.png'
+                      : 'assets/images/logo.png',
                   height: 150,
                   width: 150,
                 ),
               ),
-              const Text(
+              Text(
                 'Proxima Refeição',
                 style: TextStyle(
-                    fontWeight: FontWeight.w400, fontSize: 25, height: 3),
+                    color: isDarkMode ? customWhite : customGrey,
+                    fontWeight: FontWeight.w400,
+                    fontSize: 25,
+                    height: 3),
               ),
               TextField(
                 maxLines: 1,
                 readOnly: true,
-                style: const TextStyle(fontSize: 55),
+                style: TextStyle(
+                    color: customBlack,
+                    fontSize: 55,
+                    fontWeight: FontWeight.bold),
                 textAlignVertical: TextAlignVertical.center,
                 textAlign: TextAlign.center,
-                // keyboardType: TextInputType.number,
-                // inputFormatters: [
-                //   FilteringTextInputFormatter.digitsOnly,
-                //   HoraInputFormatter(),
-                // ],
                 decoration: InputDecoration(
                   contentPadding: const EdgeInsets.symmetric(vertical: 12.0),
                   filled: true,
+                  fillColor: isDarkMode ? customWhite : customGreyLightbg,
                   enabledBorder: OutlineInputBorder(
                     borderSide: customBorderSide,
                   ),
@@ -92,13 +111,14 @@ class _HomeState extends State<Home> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   ElevatedButton(
-                      onPressed: () {},
+                      onPressed: powerOff,
                       style: ElevatedButton.styleFrom(
                         fixedSize: const Size(75, 75),
                         elevation: 10,
                         shadowColor: customWhite,
-                        backgroundColor:
-                            Provider.of<ThemeProvider>(context).buttonColor,
+                        backgroundColor: isDarkMode
+                            ? customWhite
+                            : Provider.of<ThemeProvider>(context).buttonColor,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(50),
                         ),
@@ -117,7 +137,9 @@ class _HomeState extends State<Home> {
                         fixedSize: const Size(75, 75),
                         elevation: 10,
                         shadowColor: customWhite,
-                        backgroundColor: customGrey,
+                        backgroundColor: isDarkMode
+                            ? customWhite
+                            : Provider.of<ThemeProvider>(context).buttonColor,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(50),
                         ),
@@ -125,7 +147,9 @@ class _HomeState extends State<Home> {
                       ),
                       child: Icon(
                         Icons.settings,
-                        color: customWhite,
+                        color: isDarkMode
+                            ? Provider.of<ThemeProvider>(context).buttonColor
+                            : customWhite,
                         size: 55,
                       )),
                 ],
@@ -144,7 +168,11 @@ class _HomeState extends State<Home> {
                   ),
                   child: Text(
                     'ABRIR',
-                    style: TextStyle(color: customGrey, fontSize: 40),
+                    style: TextStyle(
+                        color: isDarkMode
+                            ? customWhite
+                            : Provider.of<ThemeProvider>(context).buttonColor,
+                        fontSize: 40),
                   )),
             ],
           ),
