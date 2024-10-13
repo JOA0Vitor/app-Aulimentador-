@@ -3,7 +3,8 @@ import 'package:aulimentador/global_style.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:http/http.dart' as http;
+import 'package:mqtt_client/mqtt_client.dart';
+import 'package:mqtt_client/mqtt_browser_client.dart';
 
 class Home extends StatefulWidget {
   const Home({
@@ -15,19 +16,83 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
-  final String esp32ip =
-      'http://172.16.19.14'; // Substitua pelo endereço IP do seu ESP32
+  final String broker =
+      'wss://8ffbe34a8726422889963a6bb3a812fa.s1.eu.hivemq.cloud:8884/mqtt';
+  final String topic = 'esp32/servo';
+  final String username = 'Aulimentador';
+  final String password = 'Miaulimenta1';
+
+  late MqttBrowserClient client;
+
+  @override
+  void initState() {
+    super.initState();
+    _setupMqttClient();
+  }
+
+  void _setupMqttClient() {
+    client = MqttBrowserClient(broker, '');
+    client.port = 8884;
+    client.logging(on: true);
+    client.keepAlivePeriod = 20;
+    client.onDisconnected = onDisconnected;
+    client.onConnected = onConnected;
+    client.onSubscribed = onSubscribed;
+
+    final connMessage = MqttConnectMessage()
+        .withClientIdentifier('flutter_client')
+        .authenticateAs(username, password)
+        .startClean()
+        .withWillQos(MqttQos.atMostOnce);
+    client.connectionMessage = connMessage;
+
+    connect();
+  }
+
+  Future<void> connect() async {
+    try {
+      print('Tentando conectar ao broker MQTT');
+      await client.connect();
+      print('Conexão ao broker MQTT estabelecida');
+    } catch (e) {
+      print('Erro ao conectar ao broker MQTT: $e');
+      client.disconnect();
+    }
+  }
+
+  void onConnected() {
+    print('Conectado ao broker MQTT');
+  }
+
+  void onDisconnected() {
+    print('Desconectado do broker MQTT');
+  }
+
+  void onSubscribed(String topic) {
+    print('Inscrito no tópico $topic');
+  }
+
+  void onUnsubscribed(String? topic) {
+    print('Desinscrito do tópico $topic');
+  }
+
+  void onSubscribeFail(String topic) {
+    print('Falha ao se inscrever no tópico $topic');
+  }
+
+  void pong() {
+    print('Ping recebido');
+  }
 
   Future<void> openServo() async {
-    try {
-      final response = await http.get(Uri.parse('$esp32ip/open'));
-      if (response.statusCode == 200) {
-        print('Servo aberto');
-      } else {
-        print('Erro ao abrir o servo');
-      }
-    } catch (e) {
-      print('Erro ao abrir o servo: $e');
+    if (client.connectionStatus!.state == MqttConnectionState.connected) {
+      final builder = MqttClientPayloadBuilder();
+      builder.addString('open');
+
+      client.publishMessage(topic, MqttQos.atMostOnce, builder.payload!);
+      print('Servo aberto!');
+    } else {
+      print('Erro: Não conectado ao broker MQTT');
     }
   }
 
@@ -89,26 +154,8 @@ class _HomeState extends State<Home> {
                 height: 38,
               ),
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  ElevatedButton(
-                      onPressed: () {},
-                      style: ElevatedButton.styleFrom(
-                        fixedSize: const Size(75, 75),
-                        elevation: 10,
-                        shadowColor: customWhite,
-                        backgroundColor:
-                            Provider.of<ThemeProvider>(context).buttonColor,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(50),
-                        ),
-                        padding: const EdgeInsets.all(4),
-                      ),
-                      child: Icon(
-                        Icons.power_settings_new,
-                        color: customYellow,
-                        size: 55,
-                      )),
                   ElevatedButton(
                       onPressed: () {
                         context.push('/horarios');
