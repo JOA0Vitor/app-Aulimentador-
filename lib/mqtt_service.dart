@@ -1,10 +1,10 @@
-// lib/mqtt_service.dart
 import 'dart:async';
 import 'dart:convert';
-
+import 'package:universal_io/io.dart';
 import 'package:aulimentador/services/storage_service.dart';
 import 'package:flutter/material.dart';
 import 'package:mqtt_client/mqtt_client.dart';
+import 'package:mqtt_client/mqtt_server_client.dart';
 import 'package:mqtt_client/mqtt_browser_client.dart';
 
 class MqttService {
@@ -13,14 +13,25 @@ class MqttService {
   final String username = 'Aulimentador';
   final String password = 'Miaulimenta1';
 
-  late MqttBrowserClient client;
+  late MqttClient client;
 
   final StreamController<List<Horario>> _horariosController =
       StreamController<List<Horario>>.broadcast();
   Stream<List<Horario>> get horariosStream => _horariosController.stream;
 
-  MqttService() {
-    client = MqttBrowserClient(broker, '');
+  // Singleton
+  static final MqttService _instance = MqttService._internal();
+
+  factory MqttService() {
+    return _instance;
+  }
+
+  MqttService._internal() {
+    if (Platform.isAndroid || Platform.isIOS) {
+      client = MqttServerClient(broker, '');
+    } else {
+      client = MqttBrowserClient(broker, '');
+    }
     client.port = 8884;
     client.logging(on: true);
     client.setProtocolV311();
@@ -38,14 +49,20 @@ class MqttService {
   }
 
   Future<void> connect() async {
-    try {
-      print('Tentando conectar ao broker MQTT...');
-      await client.connect();
-      print('Conectado ao broker MQTT');
-    } catch (e) {
-      print('Erro ao conectar ao broker MQTT: $e');
-      client.disconnect();
+    if (client.connectionStatus?.state != MqttConnectionState.connected) {
+      try {
+        print('Tentando conectar ao broker MQTT...');
+        await client.connect();
+        print('Conectado ao broker MQTT');
+      } catch (e) {
+        print('Erro ao conectar ao broker MQTT: $e');
+        client.disconnect();
+      }
     }
+  }
+
+  Future<void> disconnect() async {
+    client.disconnect();
   }
 
   void onDisconnected() {
@@ -68,7 +85,6 @@ class MqttService {
     if (client.connectionStatus!.state == MqttConnectionState.connected) {
       final builder = MqttClientPayloadBuilder();
       builder.addString('open');
-
       client.publishMessage(
           'esp32/servo', MqttQos.atMostOnce, builder.payload!);
       print('Servo aberto!');

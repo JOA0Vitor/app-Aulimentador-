@@ -5,10 +5,11 @@ import 'package:aulimentador/global_style.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mqtt_client/mqtt_client.dart';
+import 'package:mqtt_client/mqtt_server_client.dart';
 import 'package:mqtt_client/mqtt_browser_client.dart';
 import 'package:provider/provider.dart';
 import 'package:aulimentador/services/storage_service.dart';
-import 'mqtt_service.dart';
+import 'package:aulimentador/mqtt_service.dart';
 
 class Horarios extends StatefulWidget {
   const Horarios({super.key});
@@ -18,7 +19,7 @@ class Horarios extends StatefulWidget {
 }
 
 class _HorariosState extends State<Horarios> {
-  late MqttService mqttService;
+  final MqttService mqttService = MqttService(); // Instância única
 
   TimeOfDay _selectedTime = TimeOfDay.now();
   List<Horario> _horarios = [];
@@ -26,7 +27,6 @@ class _HorariosState extends State<Horarios> {
   @override
   void initState() {
     super.initState();
-    mqttService = MqttService();
     mqttService.connect();
     _loadHorarios();
   }
@@ -51,6 +51,12 @@ class _HorariosState extends State<Horarios> {
 
       context.read<HorarioProvider>().adicionarHorario(pickedTime);
     }
+  }
+
+  @override
+  void dispose() {
+    // Você pode decidir não desconectar aqui, se o serviço deve permanecer ativo
+    super.dispose();
   }
 
   @override

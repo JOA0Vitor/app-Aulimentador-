@@ -4,8 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:mqtt_client/mqtt_client.dart';
+import 'package:mqtt_client/mqtt_server_client.dart';
 import 'package:mqtt_client/mqtt_browser_client.dart';
-import 'mqtt_service.dart';
+import 'package:aulimentador/mqtt_service.dart';
 
 class Home extends StatefulWidget {
   const Home({
@@ -17,13 +18,18 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
-  late MqttService mqttService;
+  final MqttService mqttService = MqttService(); // Instância única
 
   @override
   void initState() {
     super.initState();
-    mqttService = MqttService();
     mqttService.connect();
+  }
+
+  @override
+  void dispose() {
+    // Você pode decidir não desconectar aqui, se o serviço deve permanecer ativo
+    super.dispose();
   }
 
   @override
