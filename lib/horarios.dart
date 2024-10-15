@@ -8,51 +8,27 @@ import 'package:mqtt_client/mqtt_client.dart';
 import 'package:mqtt_client/mqtt_browser_client.dart';
 import 'package:provider/provider.dart';
 import 'package:aulimentador/services/storage_service.dart';
+import 'mqtt_service.dart';
 
 class Horarios extends StatefulWidget {
   const Horarios({super.key});
 
   @override
-  _HorariosState createState() => _HorariosState();
+  State<Horarios> createState() => _HorariosState();
 }
 
 class _HorariosState extends State<Horarios> {
-  final String broker =
-      'wss://8ffbe34a8726422889963a6bb3a812fa.s1.eu.hivemq.cloud:8884/mqtt';
-  final String topic = 'esp32/horarios';
-  final String username =
-      'Aulimentador'; // Substitua pelo seu usuário do HiveMQ
-  final String password = 'Miaulimenta1'; // Substitua pela sua senha do HiveMQ
+  late MqttService mqttService;
 
   TimeOfDay _selectedTime = TimeOfDay.now();
-  late MqttBrowserClient client;
   List<Horario> _horarios = [];
 
   @override
   void initState() {
     super.initState();
+    mqttService = MqttService();
+    mqttService.connect();
     _loadHorarios();
-
-    client = MqttBrowserClient(broker, '');
-    client.port = 8884;
-    client.logging(on: true);
-    client.onConnected = onConnected;
-    client.onDisconnected = onDisconnected;
-    client.onSubscribed = onSubscribed;
-    client.setProtocolV311();
-    client.keepAlivePeriod = 20;
-    client.onUnsubscribed = onUnsubscribed;
-    client.onSubscribeFail = onSubscribeFail;
-    client.pongCallback = pong;
-
-    final connMessage = MqttConnectMessage()
-        .withClientIdentifier('flutter_client')
-        .startClean()
-        .withWillQos(MqttQos.atMostOnce)
-        .authenticateAs(username, password);
-    client.connectionMessage = connMessage;
-
-    connect();
   }
 
   Future<void> _loadHorarios() async {
@@ -60,56 +36,6 @@ class _HorariosState extends State<Horarios> {
     setState(() {
       _horarios = loadedHorarios;
     });
-  }
-
-  Future<void> connect() async {
-    try {
-      print('Tentando conectar ao broker MQTT...');
-      await client.connect();
-      print('Conexão estabelecida com sucesso!');
-    } catch (e) {
-      print('Erro ao conectar ao broker MQTT: $e');
-      client.disconnect();
-    }
-  }
-
-  void onConnected() {
-    print('Conectado ao broker MQTT');
-  }
-
-  void onDisconnected() {
-    print('Desconectado do broker MQTT');
-  }
-
-  void onSubscribed(String topic) {
-    print('Inscrito no tópico $topic');
-  }
-
-  void onUnsubscribed(String? topic) {
-    print('Desinscrito do tópico $topic');
-  }
-
-  void onSubscribeFail(String topic) {
-    print('Falha ao se inscrever no tópico $topic');
-  }
-
-  void pong() {
-    print('Ping recebido');
-  }
-
-  Future<void> enviarHorarios(List<TimeOfDay> horarios) async {
-    final payload = jsonEncode(horarios
-        .map((horario) => {
-              'hour': horario.hour,
-              'minute': horario.minute,
-            })
-        .toList());
-
-    final builder = MqttClientPayloadBuilder();
-    builder.addString(payload);
-
-    client.publishMessage(topic, MqttQos.atMostOnce, builder.payload!);
-    print('Horários enviados!');
   }
 
   Future<void> _selectTime(BuildContext context) async {
@@ -299,7 +225,7 @@ class _HorariosState extends State<Horarios> {
               ),
             ),
             ElevatedButton(
-              onPressed: () => enviarHorarios(timeList),
+              onPressed: () => mqttService.enviarHorarios(timeList),
               child: const Text('Enviar Horários'),
             ),
             const SizedBox(height: 15),
