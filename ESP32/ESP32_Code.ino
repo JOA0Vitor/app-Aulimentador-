@@ -9,10 +9,9 @@
 #include <PubSubClient.h>
 #include <ESP32Servo.h>
 #include <ArduinoJson.h>
-#include <vector>
+#include <time.h>
 #include <Preferences.h>
-
-Preferences preferences;
+#include <vector>
 
 // Configurações de Wi-Fi e MQTT
 #include "config.h" // Arquivo com credenciais
@@ -93,16 +92,38 @@ emyPxgcYxn/eR44/KJ4EBs+lVDR3veyJm+kXQ99b21/+jh5Xos1AnX5iItreGCc=
 -----END CERTIFICATE-----
 )EOF";
 
+// Objeto Preferences para armazenar dados na NVS
+Preferences preferences;
+
 unsigned long startMillis;
 bool isServoOpen = false;
 
-void loadHorarios() {
-  size_t horariosSize = preferences.getBytesLength("horarios");
-  if (horariosSize > 0) {
-    std::vector<Horario> loadedHorarios(horariosSize / sizeof(Horario));
-    preferences.getBytes("horarios", loadedHorarios.data(), horariosSize);
-    horarios = loadedHorarios;
+// Configuração do servidor NTP para o Brasil (Horário de Brasília)
+const char* ntpServer = "pool.ntp.org";
+const long  gmtOffset_sec = -10800; // UTC-3 para Horário de Brasília
+const int   daylightOffset_sec = 0; // Sem horário de verão
+
+// Carregar dados da NVS
+void loadHorariosFromNVS() {
+  int numHorarios = preferences.getInt("numHorarios", 0);
+  horarios.clear();
+  for (int i = 0; i < numHorarios; i++) {
+    Horario h;
+    h.hour = preferences.getInt(("hour_" + String(i)).c_str(), 0);
+    h.minute = preferences.getInt(("minute_" + String(i)).c_str(), 0);
+    horarios.push_back(h);
   }
+  Serial.println("Horários carregados da NVS");
+}
+
+// Função para salvar horários na NVS
+void saveHorariosToNVS() {
+  preferences.putInt("numHorarios", horarios.size());
+  for (int i = 0; i < horarios.size(); i++) {
+    preferences.putInt(("hour_" + String(i)).c_str(), horarios[i].hour);
+    preferences.putInt(("minute_" + String(i)).c_str(), horarios[i].minute);
+  }
+  Serial.println("Horários salvos na NVS");
 }
 
 // Tratamento de Mensagens MQTT
@@ -116,14 +137,13 @@ void callback(char* topic, byte* message, unsigned int length) {
     incomingMessage += (char)message[i];
   }
   
-  // Botão ABRIR
+  // Abrir
   if (String(topic) == "esp32/servo") {
     if (incomingMessage == "open") {
       Serial.println("Message received!");
       myServo.write(90);
       startMillis = millis();
       isServoOpen = true;
-      myServo.write(0);
     }
   // Horários
   } else if (String(topic) == "esp32/horarios") {
@@ -136,20 +156,19 @@ void callback(char* topic, byte* message, unsigned int length) {
       h.minute = horario["minute"];
       horarios.push_back(h);
     }
+    saveHorariosToNVS(); // Salva os horários recebidos na NVS
     Serial.println("Schedule updated via MQTT");
-  } else if (String(topic) == "esp32/horarios") {
-    DynamicJsonDocument doc(1024);
-    deserializeJson(doc, incomingMessage);
-    horarios.clear();
-    for(JsonObject horario : doc.as<JsonArray>()) {
-      Horario h;
-      h.hour = horario["hour"];
-      h.minute = horario["minute"];
-      horarios.push_back(h);
+  // Listar Horários
+  } else if (String(topic) == "esp32/lista") {
+    if (incomingMessage == "horarios") {
+      Serial.println("Horários Armazenados:");
+      for (const auto& horario : horarios) {
+      char buffer[6];
+      snprintf(buffer, sizeof(buffer), "%02d:%02d", horario.hour, horario.minute);
+      Serial.println(buffer);
+      }
+      Serial.println("Fim da lista de horários.");
     }
-    // Salvar  horários na memória flash
-    preferences.putBytes("horarios", horarios.data(), horarios.size() * sizeof(Horario));
-    Serial.println("Schedule updated via MQTT");
   }
 }
 
@@ -161,10 +180,11 @@ void reconnect() {
       Serial.println("connected");
       client.subscribe("esp32/servo");
       client.subscribe("esp32/horarios");
+      client.subscribe("esp32/lista");
     } else {
       Serial.print("failed, rc=");
       Serial.print(client.state());
-      Serial.println(" trying again in 5 seconds");
+      Serial.println(" trying again in 5 seconds...");
       delay(5000);
     }
   }
@@ -174,6 +194,7 @@ void reconnect() {
 void setup() {
   Serial.begin(115200);
   setupWifi();
+  configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
   setupMQTT();
   espClient.setCACert(root_ca);
   client.setServer(mqtt_server, mqtt_port);
@@ -181,9 +202,12 @@ void setup() {
   myServo.attach(13); // Pino do Servo
   myServo.write(0);
 
-  preferences.begin("horarios", false);
-  loadHorarios();
+  // Inicia o Preferences para acessar a NVS
+  preferences.begin("alimentador", false);
+  loadHorariosFromNVS(); // Carrega os horários armazenados
 }
+
+int lastExecutedSecond = -1;
 
 // Loop
 void loop() {
@@ -193,13 +217,23 @@ void loop() {
   client.loop();
 
   time_t now = time(nullptr);
-  struct tm* timeinfo = localtime(&now);
+  struct tm timeinfo;
+
+  if (!getLocalTime(&timeinfo)) {
+    Serial.println("Falha ao obter o tempo local.");
+    return;
+  }
+
   for (const auto& horario : horarios) {
-    if (timeinfo->tm_hour == horario.hour && timeinfo->tm_min == horario.minute) {
+    if (timeinfo.tm_hour == horario.hour && 
+        timeinfo.tm_min == horario.minute && 
+        timeinfo.tm_sec == 0 &&
+        timeinfo.tm_sec != lastExecutedSecond) {
       myServo.write(90); 
       startMillis = millis();
       isServoOpen = true;
-      myServo.write(0);
+      Serial.println("Servo acionado no horário definido!");
+      lastExecutedSecond = timeinfo.tm_sec;
     }
   }
 
@@ -207,4 +241,6 @@ void loop() {
     myServo.write(0);
     isServoOpen = false;
   }
+
+  delay(500);
 }
