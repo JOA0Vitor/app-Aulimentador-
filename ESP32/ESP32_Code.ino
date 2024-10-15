@@ -139,7 +139,7 @@ void callback(char* topic, byte* message, unsigned int length) {
   // Abrir
   if (String(topic) == "esp32/servo") {
     if (incomingMessage == "open") {
-      Serial.println("Message received!");
+      Serial.println("Servo aberto!");
       myServo.write(90);
       startMillis = millis();
       isServoOpen = true;
@@ -233,12 +233,14 @@ void loop() {
       isServoOpen = true;
       Serial.println("Servo acionado no horário definido!");
       lastExecutedSecond = timeinfo.tm_sec;
+      startMillis = millis();
     }
   }
 
   if (isServoOpen && millis() - startMillis >= 5000) {
     myServo.write(0);
     isServoOpen = false;
+    Serial.println("Servo fechado!");
   }
 
   delay(500);

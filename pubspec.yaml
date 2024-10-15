@@ -42,7 +42,7 @@ dependencies:
   provider: ^6.1.2
   flutter_svg: ^2.0.10+1
   http: ^1.2.2
-  mqtt_client: ^9.6.1
+  mqtt_client: ^9.8.1
   shared_preferences: ^2.0.12
   universal_io: ^2.0.4
  
@@ -73,6 +73,7 @@ flutter:
   assets:
     - assets/images/logo.png
     - assets/icon/lixo.svg
+    - assets/certificate/ca.certificate.pem
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see

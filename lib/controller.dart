@@ -16,9 +16,13 @@ class HorarioProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  TimeOfDay? get primeiroHorario {
-    if (_horarios.isNotEmpty) {
-      return _horarios.first;
+  TimeOfDay? get proximoHorario {
+    final now = TimeOfDay.now();
+    for (var horario in _horarios) {
+      if (horario.hour > now.hour ||
+          (horario.hour == now.hour && horario.minute > now.minute)) {
+        return horario;
+      }
     }
     return null;
   }

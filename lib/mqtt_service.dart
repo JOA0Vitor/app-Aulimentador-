@@ -3,56 +3,64 @@ import 'dart:convert';
 import 'package:universal_io/io.dart';
 import 'package:aulimentador/services/storage_service.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:mqtt_client/mqtt_client.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
-import 'package:mqtt_client/mqtt_browser_client.dart';
 
 class MqttService {
-  final String broker =
-      'wss://8ffbe34a8726422889963a6bb3a812fa.s1.eu.hivemq.cloud:8884/mqtt';
+  static final MqttService _instance = MqttService._internal();
+  final MqttServerClient client;
+  static const String broker =
+      '8ffbe34a8726422889963a6bb3a812fa.s1.eu.hivemq.cloud';
   final String username = 'Aulimentador';
   final String password = 'Miaulimenta1';
-
-  late MqttClient client;
 
   final StreamController<List<Horario>> _horariosController =
       StreamController<List<Horario>>.broadcast();
   Stream<List<Horario>> get horariosStream => _horariosController.stream;
 
-  // Singleton
-  static final MqttService _instance = MqttService._internal();
-
   factory MqttService() {
     return _instance;
   }
 
-  MqttService._internal() {
-    if (Platform.isAndroid || Platform.isIOS) {
-      client = MqttServerClient(broker, '');
-    } else {
-      client = MqttBrowserClient(broker, '');
-    }
-    client.port = 8884;
+  MqttService._internal()
+      : client = MqttServerClient.withPort(broker, '', 8883) {
     client.logging(on: true);
-    client.setProtocolV311();
     client.keepAlivePeriod = 20;
+    client.secure = true;
     client.onDisconnected = onDisconnected;
     client.onConnected = onConnected;
     client.onSubscribed = onSubscribed;
+    client.setProtocolV31();
+
+    // Configuração SLL/TLS
+    _setupSecurityContext();
 
     final connMessage = MqttConnectMessage()
         .withClientIdentifier('flutter_client')
-        .authenticateAs(username, password)
         .startClean()
-        .withWillQos(MqttQos.atMostOnce);
+        .withWillQos(MqttQos.atMostOnce)
+        .authenticateAs(username, password);
     client.connectionMessage = connMessage;
+  }
+
+  Future<void> _setupSecurityContext() async {
+    final context = SecurityContext.defaultContext;
+    try {
+      final bytes =
+          await rootBundle.load('assets/certificate/ca.certificate.pem');
+      context.setTrustedCertificatesBytes(bytes.buffer.asUint8List());
+    } catch (e) {
+      print('Erro ao carregar o certificado: $e');
+    }
+    client.securityContext = context;
   }
 
   Future<void> connect() async {
     if (client.connectionStatus?.state != MqttConnectionState.connected) {
       try {
         print('Tentando conectar ao broker MQTT...');
-        await client.connect();
+        await client.connect(username, password);
         print('Conectado ao broker MQTT');
       } catch (e) {
         print('Erro ao conectar ao broker MQTT: $e');

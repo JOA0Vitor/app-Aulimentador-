@@ -5,8 +5,8 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:mqtt_client/mqtt_client.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
-import 'package:mqtt_client/mqtt_browser_client.dart';
 import 'package:aulimentador/mqtt_service.dart';
+import 'dart:async';
 
 class Home extends StatefulWidget {
   const Home({
@@ -18,23 +18,33 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
+  Timer? _timer;
   final MqttService mqttService = MqttService(); // Instância única
 
   @override
   void initState() {
     super.initState();
     mqttService.connect();
+    _startTimer();
+  }
+
+  void _startTimer() {
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (mounted) {
+        setState(() {});
+      }
+    });
   }
 
   @override
   void dispose() {
-    // Você pode decidir não desconectar aqui, se o serviço deve permanecer ativo
+    _timer?.cancel();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final primeiroHorario = context.watch<HorarioProvider>().primeiroHorario;
+    final proximoHorario = context.watch<HorarioProvider>().proximoHorario;
 
     return Scaffold(
       body: Padding(
@@ -84,7 +94,7 @@ class _HomeState extends State<Home> {
                       OutlineInputBorder(borderSide: customBorderSide),
                 ),
                 controller: TextEditingController(
-                    text: primeiroHorario?.format(context)),
+                    text: proximoHorario?.format(context)),
               ),
               const SizedBox(
                 height: 38,

@@ -6,7 +6,6 @@ import 'package:flutter_svg/svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mqtt_client/mqtt_client.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
-import 'package:mqtt_client/mqtt_browser_client.dart';
 import 'package:provider/provider.dart';
 import 'package:aulimentador/services/storage_service.dart';
 import 'package:aulimentador/mqtt_service.dart';
@@ -55,7 +54,6 @@ class _HorariosState extends State<Horarios> {
 
   @override
   void dispose() {
-    // Você pode decidir não desconectar aqui, se o serviço deve permanecer ativo
     super.dispose();
   }
 
