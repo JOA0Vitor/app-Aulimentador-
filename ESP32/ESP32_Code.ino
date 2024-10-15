@@ -11,32 +11,31 @@
 #include <ArduinoJson.h>
 #include <time.h>
 #include <Preferences.h>
+#include <WiFiManager.h>
 #include <vector>
-
-// Configurações de Wi-Fi e MQTT
-#include "config.h" // Arquivo com credenciais
 
 // Conexão Wi-Fi
 void setupWifi() {
-  delay(10);
-  Serial.println();
-  Serial.print("Connecting to ");
-  Serial.println(ssid);
+  WiFiManager wifiManager;
 
-  WiFi.begin(ssid, password);
-
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
+  // Tenta conectar à última rede conhecida ou abre o portal de configuração
+  if (!wifiManager.autoConnect("Aulimentador_AP")) {
+    Serial.println("Falha ao conectar e sem conexão salva. Reiniciando...");
+    delay(3000);
+    ESP.restart(); // Reinicia o ESP32 se a conexão falhar
   }
 
-  Serial.println("");
-  Serial.println("WiFi connected");
-  Serial.println("IP address: ");
+  Serial.println("Conexão WiFi com sucesso!");
+  Serial.println("Endereço IP: ");
   Serial.println(WiFi.localIP());
 }
 
 // Conexão MQTT
+const char* mqtt_server = "8ffbe34a8726422889963a6bb3a812fa.s1.eu.hivemq.cloud"; // Cluster URI
+const int mqtt_port = 8883; // Porta
+const char* mqtt_user = "Aulimentador"; // Usuário MQTT
+const char* mqtt_pass = "Miaulimenta1"; // Senha MQTT
+
 WiFiClientSecure espClient;
 PubSubClient client(espClient);
 
