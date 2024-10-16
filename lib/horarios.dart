@@ -36,6 +36,7 @@ class _HorariosState extends State<Horarios> {
     List<String> horariosStringList =
         _horarios.map((e) => jsonEncode(e.toJson())).toList();
     await prefs.setStringList('horarios', horariosStringList);
+    print("Horarios salvos!");
   }
 
   Future<void> _loadHorarios() async {
@@ -49,6 +50,13 @@ class _HorariosState extends State<Horarios> {
     setState(() {
       _horarios = loadedHorarios;
     });
+
+    // Atualiza o provedor com os horários carregados
+    final horarioProvider = context.read<HorarioProvider>();
+    for (var horario in loadedHorarios) {
+      horarioProvider.adicionarHorario(horario.time);
+    }
+    print("Horarios carregados!");
   }
 
   Future<void> _selectTime(BuildContext context) async {
@@ -157,6 +165,9 @@ class _HorariosState extends State<Horarios> {
                                         context
                                             .read<HorarioProvider>()
                                             .removerHorario(index);
+                                        _horarios.removeAt(
+                                            index); // Remover da lista local
+                                        _saveHorarios(); // Salvar os horários atualizados
                                         Navigator.of(context).pop();
                                       },
                                     ),
@@ -246,7 +257,7 @@ class _HorariosState extends State<Horarios> {
             ),
             ElevatedButton(
               onPressed: () => mqttService.enviarHorarios(timeList),
-              child: const Text('Enviar Horários'),
+              child: const Text('Enviar'),
             ),
             const SizedBox(height: 15),
           ],
