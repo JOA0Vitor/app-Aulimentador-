@@ -9,6 +9,7 @@ import 'package:mqtt_client/mqtt_server_client.dart';
 import 'package:provider/provider.dart';
 import 'package:aulimentador/services/storage_service.dart';
 import 'package:aulimentador/mqtt_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class Horarios extends StatefulWidget {
   const Horarios({super.key});
@@ -30,8 +31,21 @@ class _HorariosState extends State<Horarios> {
     _loadHorarios();
   }
 
+  Future<void> _saveHorarios() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    List<String> horariosStringList =
+        _horarios.map((e) => jsonEncode(e.toJson())).toList();
+    await prefs.setStringList('horarios', horariosStringList);
+  }
+
   Future<void> _loadHorarios() async {
-    List<Horario> loadedHorarios = await loadHorarios();
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    List<String>? horariosStringList = prefs.getStringList('horarios');
+    List<Horario> loadedHorarios = horariosStringList != null
+        ? horariosStringList
+            .map((e) => Horario.fromJson(jsonDecode(e)))
+            .toList()
+        : [];
     setState(() {
       _horarios = loadedHorarios;
     });
@@ -46,6 +60,8 @@ class _HorariosState extends State<Horarios> {
     if (pickedTime != null) {
       setState(() {
         _selectedTime = pickedTime;
+        _horarios.add(Horario(time: pickedTime));
+        _saveHorarios();
       });
 
       context.read<HorarioProvider>().adicionarHorario(pickedTime);
