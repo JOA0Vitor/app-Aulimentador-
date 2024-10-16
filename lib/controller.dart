@@ -1,25 +1,62 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:aulimentador/services/storage_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+class Horario {
+  final int hour;
+  final int minute;
+
+  Horario({required this.hour, required this.minute});
+
+  Map<String, dynamic> toJson() {
+    return {
+      'hour': hour,
+      'minute': minute,
+    };
+  }
+
+  static Horario fromJson(Map<String, dynamic> json) {
+    return Horario(
+      hour: json['hour'],
+      minute: json['minute'],
+    );
+  }
+}
 
 class HorarioProvider with ChangeNotifier {
-  final List<TimeOfDay> _horarios = [];
-
-  List<TimeOfDay> get horarios => _horarios;
+  List<Horario> _horarios = [];
+  List<Horario> get horarios => _horarios;
 
   HorarioProvider() {
     loadHorarios();
   }
 
-  void adicionarHorario(TimeOfDay horario) {
+  void addHorario(Horario horario) {
     _horarios.add(horario);
-    _saveHorarios();
+    saveHorarios();
     notifyListeners();
   }
 
-  void removerHorario(int index) {
+  void removeHorario(int index) {
     _horarios.removeAt(index);
-    _saveHorarios();
+    saveHorarios();
     notifyListeners();
+  }
+
+  Future<void> saveHorarios() async {
+    final prefs = await SharedPreferences.getInstance();
+    final horariosJson = _horarios.map((horario) => horario.toJson()).toList();
+    prefs.setString('horarios', jsonEncode(horariosJson));
+  }
+
+  Future<void> loadHorarios() async {
+    final prefs = await SharedPreferences.getInstance();
+    final horariosString = prefs.getString('horarios');
+    if (horariosString != null) {
+      final List<dynamic> horariosJson = jsonDecode(horariosString);
+      _horarios = horariosJson.map((json) => Horario.fromJson(json)).toList();
+      notifyListeners();
+    }
   }
 
   TimeOfDay? get proximoHorario {
@@ -27,22 +64,9 @@ class HorarioProvider with ChangeNotifier {
     for (var horario in _horarios) {
       if (horario.hour > now.hour ||
           (horario.hour == now.hour && horario.minute > now.minute)) {
-        return horario;
+        return TimeOfDay(hour: horario.hour, minute: horario.minute);
       }
     }
     return null;
-  }
-
-  Future<void> _saveHorarios() async {
-    List<Horario> horariosToSave =
-        _horarios.map((time) => Horario(time: time)).toList();
-    await saveHorarios(horariosToSave);
-  }
-
-  Future<void> _loadHorarios() async {
-    List<Horario> loadedHorarios = await loadHorarios();
-    _horarios.clear();
-    _horarios.addAll(loadedHorarios.map((h) => h.time));
-    notifyListeners();
   }
 }

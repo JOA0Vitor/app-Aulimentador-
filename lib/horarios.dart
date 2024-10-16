@@ -1,15 +1,10 @@
-import 'dart:convert';
-import 'package:flutter/material.dart';
-import 'package:aulimentador/controller.dart';
 import 'package:aulimentador/global_style.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:go_router/go_router.dart';
-import 'package:mqtt_client/mqtt_client.dart';
-import 'package:mqtt_client/mqtt_server_client.dart';
 import 'package:provider/provider.dart';
-import 'package:aulimentador/services/storage_service.dart';
 import 'package:aulimentador/mqtt_service.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:aulimentador/controller.dart';
 
 class Horarios extends StatefulWidget {
   const Horarios({super.key});
@@ -20,43 +15,13 @@ class Horarios extends StatefulWidget {
 
 class _HorariosState extends State<Horarios> {
   final MqttService mqttService = MqttService(); // Instância única
-
   TimeOfDay _selectedTime = TimeOfDay.now();
-  List<Horario> _horarios = [];
 
   @override
   void initState() {
     super.initState();
     mqttService.connect();
-    _loadHorarios();
-  }
-
-  Future<void> _saveHorarios() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    List<String> horariosStringList =
-        _horarios.map((e) => jsonEncode(e.toJson())).toList();
-    await prefs.setStringList('horarios', horariosStringList);
-    print("Horarios salvos!");
-  }
-
-  Future<void> _loadHorarios() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    List<String>? horariosStringList = prefs.getStringList('horarios');
-    List<Horario> loadedHorarios = horariosStringList != null
-        ? horariosStringList
-            .map((e) => Horario.fromJson(jsonDecode(e)))
-            .toList()
-        : [];
-    setState(() {
-      _horarios = loadedHorarios;
-    });
-
-    // Atualiza o provedor com os horários carregados
-    final horarioProvider = context.read<HorarioProvider>();
-    for (var horario in loadedHorarios) {
-      horarioProvider.adicionarHorario(horario.time);
-    }
-    print("Horarios carregados!");
+    context.read<HorarioProvider>().loadHorarios();
   }
 
   Future<void> _selectTime(BuildContext context) async {
@@ -68,11 +33,11 @@ class _HorariosState extends State<Horarios> {
     if (pickedTime != null) {
       setState(() {
         _selectedTime = pickedTime;
-        _horarios.add(Horario(time: pickedTime));
-        _saveHorarios();
+        final novoHorario =
+            Horario(hour: pickedTime.hour, minute: pickedTime.minute);
+        context.read<HorarioProvider>().addHorario(novoHorario);
       });
-
-      context.read<HorarioProvider>().adicionarHorario(pickedTime);
+      print("Horario adicionado e salvo!");
     }
   }
 
@@ -115,13 +80,12 @@ class _HorariosState extends State<Horarios> {
                             style: const TextStyle(fontSize: 25),
                             textAlignVertical: TextAlignVertical.center,
                             textAlign: TextAlign.center,
-                            keyboardType: TextInputType.number,
                             decoration: InputDecoration(
                               border: OutlineInputBorder(
                                 borderSide: customBorderSide,
                               ),
-                              hintText: timeList[index].format(context),
-                              // hintStyle: TextStyle(color: customBlack),
+                              hintText:
+                                  '${timeList[index].hour}:${timeList[index].minute}',
                               contentPadding:
                                   const EdgeInsets.symmetric(vertical: 10.0),
                               filled: true,
@@ -134,9 +98,7 @@ class _HorariosState extends State<Horarios> {
                             ),
                           ),
                         ),
-                        const SizedBox(
-                          width: 5,
-                        ),
+                        const SizedBox(width: 5),
                         GestureDetector(
                           onTap: () {
                             showDialog<void>(
@@ -157,17 +119,12 @@ class _HorariosState extends State<Horarios> {
                                               BorderRadius.circular(8),
                                         ),
                                       ),
-                                      child: Text(
-                                        'Sim',
-                                        style: TextStyle(color: customWhite),
-                                      ),
+                                      child: Text('Sim',
+                                          style: TextStyle(color: customWhite)),
                                       onPressed: () {
                                         context
                                             .read<HorarioProvider>()
-                                            .removerHorario(index);
-                                        _horarios.removeAt(
-                                            index); // Remover da lista local
-                                        _saveHorarios(); // Salvar os horários atualizados
+                                            .removeHorario(index);
                                         Navigator.of(context).pop();
                                       },
                                     ),
@@ -180,10 +137,9 @@ class _HorariosState extends State<Horarios> {
                                               BorderRadius.circular(8),
                                         ),
                                       ),
-                                      child: const Text(
-                                        'Não',
-                                        style: TextStyle(color: Colors.black),
-                                      ),
+                                      child: const Text('Não',
+                                          style:
+                                              TextStyle(color: Colors.black)),
                                       onPressed: () {
                                         context.pop();
                                       },
@@ -206,31 +162,11 @@ class _HorariosState extends State<Horarios> {
                                 'assets/icon/lixo.svg',
                                 colorFilter: ColorFilter.mode(
                                     customWhite, BlendMode.srcIn),
-                                // width: 20,
                                 height: 30,
                               ),
                             ),
                           ),
                         ),
-                        // ElevatedButton.icon(
-                        //   style: ElevatedButton.styleFrom(
-                        //     fixedSize: const Size(62, 50),
-                        //     backgroundColor: Colors.grey[200],
-                        //     shape: RoundedRectangleBorder(
-                        //       borderRadius: BorderRadius.circular(10),
-                        //     ),
-                        //   ),
-                        //   onPressed: () {},
-                        //   label: Row(
-                        //     children: [
-                        //       SvgPicture.asset(
-                        //         'assets/icon/lixo.svg',
-                        //         // colorFilter:
-                        //         //     ColorFilter.mode(customWhite, BlendMode.srcIn),
-                        //       ),
-                        //     ],
-                        //   ),
-                        // )
                       ],
                     ),
                   );
@@ -256,7 +192,13 @@ class _HorariosState extends State<Horarios> {
               ),
             ),
             ElevatedButton(
-              onPressed: () => mqttService.enviarHorarios(timeList),
+              onPressed: () {
+                final timeOfDayList = timeList
+                    .map((horario) =>
+                        TimeOfDay(hour: horario.hour, minute: horario.minute))
+                    .toList();
+                mqttService.enviarHorarios(timeOfDayList);
+              },
               child: const Text('Enviar'),
             ),
             const SizedBox(height: 15),

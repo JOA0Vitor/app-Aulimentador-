@@ -1,14 +1,20 @@
+import 'dart:convert';
 import 'package:aulimentador/controller.dart';
 import 'package:aulimentador/global_style.dart';
 import 'package:aulimentador/route.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final horarioProvider = HorarioProvider();
+  await horarioProvider.loadHorarios();
+
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => HorarioProvider()),
+        ChangeNotifierProvider(create: (_) => horarioProvider),
         ChangeNotifierProvider(
             create: (_) => ThemeProvider()), // Adicione o ThemeProvider
       ],
