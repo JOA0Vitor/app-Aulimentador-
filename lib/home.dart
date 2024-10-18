@@ -121,24 +121,32 @@ class _HomeState extends State<Home> {
                       )),
                 ],
               ),
-              ElevatedButton(
-                  onPressed: () {
-                    mqttService.openServo();
-                  },
-                  style: ElevatedButton.styleFrom(
-                    fixedSize: const Size(150, 150),
-                    elevation: 10,
-                    shadowColor: customWhite,
-                    backgroundColor: customYellow,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(100),
+              Builder(
+                builder: (context) => ElevatedButton(
+                    onPressed: () {
+                      mqttService.openServo();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Servo Aberto!'),
+                          duration: Duration(seconds: 2),
+                        ),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      fixedSize: const Size(150, 150),
+                      elevation: 10,
+                      shadowColor: customWhite,
+                      backgroundColor: customYellow,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(100),
+                      ),
+                      padding: const EdgeInsets.all(4),
                     ),
-                    padding: const EdgeInsets.all(4),
-                  ),
-                  child: Text(
-                    'ABRIR',
-                    style: TextStyle(color: customGrey, fontSize: 40),
-                  )),
+                    child: Text(
+                      'ABRIR',
+                      style: TextStyle(color: customGrey, fontSize: 40),
+                    )),
+              ),
             ],
           ),
         ),

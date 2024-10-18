@@ -110,39 +110,48 @@ class _HorariosState extends State<Horarios> {
                                   content: const Text(
                                       'Após remover um horário o sistema precisará atualizar sua lista de horários programados.'),
                                   actions: <Widget>[
-                                    ElevatedButton(
-                                      style: ElevatedButton.styleFrom(
-                                        fixedSize: const Size(112, 50),
-                                        backgroundColor: customRed,
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(8),
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceEvenly,
+                                      children: [
+                                        ElevatedButton(
+                                          style: ElevatedButton.styleFrom(
+                                            fixedSize: const Size(112, 50),
+                                            backgroundColor: customRed,
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                            ),
+                                          ),
+                                          child: Text('Sim',
+                                              style: TextStyle(
+                                                  fontSize: 26,
+                                                  color: customWhite)),
+                                          onPressed: () {
+                                            context
+                                                .read<HorarioProvider>()
+                                                .removeHorario(index);
+                                            Navigator.of(context).pop();
+                                          },
                                         ),
-                                      ),
-                                      child: Text('Sim',
-                                          style: TextStyle(color: customWhite)),
-                                      onPressed: () {
-                                        context
-                                            .read<HorarioProvider>()
-                                            .removeHorario(index);
-                                        Navigator.of(context).pop();
-                                      },
-                                    ),
-                                    ElevatedButton(
-                                      style: ElevatedButton.styleFrom(
-                                        fixedSize: const Size(112, 50),
-                                        backgroundColor: Colors.grey[200],
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(8),
+                                        ElevatedButton(
+                                          style: ElevatedButton.styleFrom(
+                                            fixedSize: const Size(112, 50),
+                                            backgroundColor: Colors.grey[200],
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                            ),
+                                          ),
+                                          child: const Text('Não',
+                                              style: TextStyle(
+                                                  fontSize: 26,
+                                                  color: Colors.black)),
+                                          onPressed: () {
+                                            context.pop();
+                                          },
                                         ),
-                                      ),
-                                      child: const Text('Não',
-                                          style:
-                                              TextStyle(color: Colors.black)),
-                                      onPressed: () {
-                                        context.pop();
-                                      },
+                                      ],
                                     ),
                                   ],
                                 );
@@ -173,35 +182,56 @@ class _HorariosState extends State<Horarios> {
                 },
               ),
             ),
-            const SizedBox(height: 15),
-            ElevatedButton(
-              onPressed: () => _selectTime(context),
-              style: ElevatedButton.styleFrom(
-                fixedSize: const Size(70, 70),
-                elevation: 10,
-                backgroundColor: const Color(0xFF38454D),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(100),
+            const SizedBox(width: 20),
+            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+              ElevatedButton(
+                onPressed: () {
+                  final timeOfDayList = timeList
+                      .map((horario) =>
+                          TimeOfDay(hour: horario.hour, minute: horario.minute))
+                      .toList();
+                  mqttService.enviarHorarios(timeOfDayList);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Horários Enviados!'),
+                      duration: Duration(seconds: 2),
+                    ),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  fixedSize: const Size(70, 70),
+                  elevation: 10,
+                  backgroundColor: const Color(0xFF38454D),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(100),
+                  ),
+                  padding: const EdgeInsets.all(4),
                 ),
-                padding: const EdgeInsets.all(4),
+                child: Icon(
+                  Icons.send,
+                  color: customWhite,
+                  size: 45,
+                ),
               ),
-              child: Icon(
-                Icons.add,
-                color: customWhite,
-                size: 45,
+              ElevatedButton(
+                onPressed: () => _selectTime(context),
+                style: ElevatedButton.styleFrom(
+                  fixedSize: const Size(70, 70),
+                  elevation: 10,
+                  backgroundColor: const Color(0xFF38454D),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(100),
+                  ),
+                  padding: const EdgeInsets.all(4),
+                ),
+                child: Icon(
+                  Icons.add,
+                  color: customWhite,
+                  size: 45,
+                ),
               ),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                final timeOfDayList = timeList
-                    .map((horario) =>
-                        TimeOfDay(hour: horario.hour, minute: horario.minute))
-                    .toList();
-                mqttService.enviarHorarios(timeOfDayList);
-              },
-              child: const Text('Enviar'),
-            ),
-            const SizedBox(height: 15),
+            ]),
+            const SizedBox(height: 20),
           ],
         ),
       ),
