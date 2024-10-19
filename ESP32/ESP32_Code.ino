@@ -30,6 +30,13 @@ void setupWifi() {
   Serial.println(WiFi.localIP());
 }
 
+// Reset Wi-Fi
+void resetWifi() {
+  WiFi.disconnect(true);
+  delay(2000);
+  ESP.restart();
+}
+
 // Conexão MQTT
 const char* mqtt_server = "8ffbe34a8726422889963a6bb3a812fa.s1.eu.hivemq.cloud"; // Cluster URI
 const int mqtt_port = 8883; // Porta
@@ -158,16 +165,8 @@ void callback(char* topic, byte* message, unsigned int length) {
     saveHorariosToNVS(); // Salva os horários recebidos na NVS
     Serial.println("Schedule updated via MQTT");
   // Listar Horários
-  } else if (String(topic) == "esp32/lista") {
-    if (incomingMessage == "horarios") {
-      Serial.println("Horários Armazenados:");
-      for (const auto& horario : horarios) {
-      char buffer[6];
-      snprintf(buffer, sizeof(buffer), "%02d:%02d", horario.hour, horario.minute);
-      Serial.println(buffer);
-      }
-      Serial.println("Fim da lista de horários.");
-    }
+  } else if (String(topic) == "esp32/reset") {
+    resetWifi();
   }
 }
 
@@ -180,6 +179,7 @@ void reconnect() {
       client.subscribe("esp32/servo");
       client.subscribe("esp32/horarios");
       client.subscribe("esp32/lista");
+      client.subscribe("esp32/reset");
     } else {
       Serial.print("failed, rc=");
       Serial.print(client.state());

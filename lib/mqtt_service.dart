@@ -89,6 +89,7 @@ class MqttService {
     client.subscribe(topic, MqttQos.atLeastOnce);
   }
 
+  // Mensagem MQTT para abrir o servo
   Future<void> openServo() async {
     if (client.connectionStatus!.state == MqttConnectionState.connected) {
       final builder = MqttClientPayloadBuilder();
@@ -101,6 +102,7 @@ class MqttService {
     }
   }
 
+  // Mensagem MQTT para enviar os horários
   Future<void> enviarHorarios(List<TimeOfDay> horarios) async {
     final payload = jsonEncode(horarios
         .map((horario) => {
@@ -114,5 +116,16 @@ class MqttService {
     client.publishMessage(
         'esp32/horarios', MqttQos.atLeastOnce, builder.payload!);
     print('Horários enviados!');
+  }
+
+  // Mensagem MQTT para resetar a conexão WiFi
+  Future<void> resetarWifi() async {
+    if (client.connectionStatus!.state == MqttConnectionState.connected) {
+      final builder = MqttClientPayloadBuilder();
+      builder.addString('');
+      client.publishMessage(
+          'esp32/reset', MqttQos.atMostOnce, builder.payload!);
+      print('Resetando conexão WiFi...');
+    }
   }
 }

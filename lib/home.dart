@@ -100,8 +100,36 @@ class _HomeState extends State<Home> {
                 height: 40,
               ),
               Row(
-                mainAxisAlignment: MainAxisAlignment.end,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
+                  Builder(
+                    builder: (context) => ElevatedButton(
+                        onPressed: () {
+                          // Resetar Conexão
+                          mqttService.resetarWifi();
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                  'Conexão Resetada! Por favor, reconecte a Wi-Fi.'),
+                              duration: Duration(seconds: 2),
+                            ),
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          fixedSize: const Size(75, 75),
+                          elevation: 4,
+                          backgroundColor: lightColor,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(50),
+                          ),
+                          padding: const EdgeInsets.all(4),
+                        ),
+                        child: Icon(
+                          Icons.wifi,
+                          color: darkColor,
+                          size: 60,
+                        )),
+                  ),
                   ElevatedButton(
                       onPressed: () {
                         context.push('/horarios');
@@ -122,6 +150,7 @@ class _HomeState extends State<Home> {
                       )),
                 ],
               ),
+              const SizedBox(height: 40),
               Builder(
                 builder: (context) => ElevatedButton(
                     onPressed: () {
