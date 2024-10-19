@@ -50,11 +50,15 @@ class _HorariosState extends State<Horarios> {
   Widget build(BuildContext context) {
     final timeList = context.watch<HorarioProvider>().horarios;
 
+    final isDarkTheme = Theme.of(context).brightness == Brightness.dark;
+    final darkColor = isDarkTheme ? const Color(0xFF38454D) : Colors.grey[200];
+    final lightColor = isDarkTheme ? Colors.grey[200] : const Color(0xFF38454D);
+
     return Scaffold(
       appBar: AppBar(
         title: Text(
           'Horários',
-          style: TextStyle(color: customBlack),
+          style: TextStyle(color: customBlack, fontFamily: 'Kanit'),
         ),
         centerTitle: true,
         backgroundColor: customGreyLight,
@@ -77,24 +81,19 @@ class _HorariosState extends State<Horarios> {
                           child: TextField(
                             maxLines: 1,
                             readOnly: true,
-                            style: const TextStyle(fontSize: 25),
+                            style: TextStyle(
+                                fontSize: 40,
+                                fontFamily: 'Jua',
+                                color: lightColor),
                             textAlignVertical: TextAlignVertical.center,
                             textAlign: TextAlign.center,
                             decoration: InputDecoration(
-                              border: OutlineInputBorder(
-                                borderSide: customBorderSide,
-                              ),
+                              border: InputBorder.none,
                               hintText:
                                   '${timeList[index].hour}:${timeList[index].minute}',
                               contentPadding:
-                                  const EdgeInsets.symmetric(vertical: 10.0),
+                                  const EdgeInsets.symmetric(vertical: 2),
                               filled: true,
-                              enabledBorder: OutlineInputBorder(
-                                borderSide: customBorderSide,
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderSide: customBorderSide,
-                              ),
                             ),
                           ),
                         ),
@@ -105,10 +104,18 @@ class _HorariosState extends State<Horarios> {
                               context: context,
                               builder: (BuildContext context) {
                                 return AlertDialog(
-                                  title: const Text(
-                                      'Gostaria de Remover o Horário?'),
-                                  content: const Text(
-                                      'Após remover um horário o sistema precisará atualizar sua lista de horários programados.'),
+                                  title: Text(
+                                    'Gostaria de Remover o Horário?',
+                                    style: TextStyle(
+                                        fontFamily: 'Kanit', color: lightColor),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  content: Text(
+                                    'Após remover um horário o sistema precisará atualizar sua lista de horários programados.',
+                                    style: TextStyle(
+                                        fontFamily: 'Kanit', color: lightColor),
+                                    textAlign: TextAlign.center,
+                                  ),
                                   actions: <Widget>[
                                     Row(
                                       mainAxisAlignment:
@@ -125,6 +132,7 @@ class _HorariosState extends State<Horarios> {
                                           ),
                                           child: Text('Sim',
                                               style: TextStyle(
+                                                  fontFamily: 'Kanit',
                                                   fontSize: 26,
                                                   color: customWhite)),
                                           onPressed: () {
@@ -137,16 +145,17 @@ class _HorariosState extends State<Horarios> {
                                         ElevatedButton(
                                           style: ElevatedButton.styleFrom(
                                             fixedSize: const Size(112, 50),
-                                            backgroundColor: Colors.grey[200],
+                                            backgroundColor: lightColor,
                                             shape: RoundedRectangleBorder(
                                               borderRadius:
                                                   BorderRadius.circular(8),
                                             ),
                                           ),
-                                          child: const Text('Não',
+                                          child: Text('Não',
                                               style: TextStyle(
+                                                  fontFamily: 'Kanit',
                                                   fontSize: 26,
-                                                  color: Colors.black)),
+                                                  color: darkColor)),
                                           onPressed: () {
                                             context.pop();
                                           },
@@ -164,14 +173,13 @@ class _HorariosState extends State<Horarios> {
                             decoration: BoxDecoration(
                                 borderRadius:
                                     const BorderRadius.all(Radius.circular(50)),
-                                color: customGrey),
+                                color: lightColor),
                             child: Padding(
                               padding: const EdgeInsets.all(16.0),
                               child: SvgPicture.asset(
                                 'assets/icon/lixo.svg',
-                                colorFilter: ColorFilter.mode(
-                                    customWhite, BlendMode.srcIn),
-                                height: 30,
+                                color: darkColor,
+                                height: 40,
                               ),
                             ),
                           ),
@@ -183,7 +191,7 @@ class _HorariosState extends State<Horarios> {
               ),
             ),
             const SizedBox(width: 20),
-            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+            Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
               ElevatedButton(
                 onPressed: () {
                   final timeOfDayList = timeList
@@ -200,8 +208,8 @@ class _HorariosState extends State<Horarios> {
                 },
                 style: ElevatedButton.styleFrom(
                   fixedSize: const Size(70, 70),
-                  elevation: 10,
-                  backgroundColor: const Color(0xFF38454D),
+                  elevation: 4,
+                  backgroundColor: lightColor,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(100),
                   ),
@@ -209,16 +217,17 @@ class _HorariosState extends State<Horarios> {
                 ),
                 child: Icon(
                   Icons.send,
-                  color: customWhite,
+                  color: darkColor,
                   size: 45,
                 ),
               ),
+              const SizedBox(width: 40),
               ElevatedButton(
                 onPressed: () => _selectTime(context),
                 style: ElevatedButton.styleFrom(
                   fixedSize: const Size(70, 70),
-                  elevation: 10,
-                  backgroundColor: const Color(0xFF38454D),
+                  elevation: 4,
+                  backgroundColor: lightColor,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(100),
                   ),
@@ -226,12 +235,12 @@ class _HorariosState extends State<Horarios> {
                 ),
                 child: Icon(
                   Icons.add,
-                  color: customWhite,
-                  size: 45,
+                  color: darkColor,
+                  size: 50,
                 ),
               ),
             ]),
-            const SizedBox(height: 20),
+            const SizedBox(height: 25),
           ],
         ),
       ),

@@ -44,6 +44,12 @@ class _HomeState extends State<Home> {
   Widget build(BuildContext context) {
     final proximoHorario = context.watch<HorarioProvider>().proximoHorario;
 
+    final isDarkTheme = Theme.of(context).brightness == Brightness.dark;
+    final darkColor = isDarkTheme ? const Color(0xFF38454D) : Colors.grey[200];
+    final lightColor = isDarkTheme ? Colors.grey[200] : const Color(0xFF38454D);
+    final logoImage =
+        isDarkTheme ? 'assets/images/logoDark.png' : 'assets/images/logo.png';
+
     return Scaffold(
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 25.0),
@@ -61,41 +67,37 @@ class _HomeState extends State<Home> {
                       .toggleTheme();
                 },
                 child: Image.asset(
-                  'assets/images/logo.png',
-                  height: 150,
-                  width: 150,
+                  logoImage,
+                  height: 175,
+                  width: 175,
                 ),
               ),
-              const Text(
+              const SizedBox(height: 30),
+              Text(
                 'Proxima Refeição',
                 style: TextStyle(
-                    fontWeight: FontWeight.w400, fontSize: 25, height: 3),
+                    color: lightColor,
+                    fontWeight: FontWeight.w500,
+                    fontSize: 25,
+                    fontFamily: 'Kanit',
+                    height: 2),
               ),
               TextField(
                 maxLines: 1,
                 readOnly: true,
-                style: const TextStyle(fontSize: 55),
+                style: const TextStyle(fontSize: 60, fontFamily: 'Jua'),
                 textAlignVertical: TextAlignVertical.center,
                 textAlign: TextAlign.center,
-                // keyboardType: TextInputType.number,
-                // inputFormatters: [
-                //   FilteringTextInputFormatter.digitsOnly,
-                //   HoraInputFormatter(),
-                // ],
-                decoration: InputDecoration(
-                  contentPadding: const EdgeInsets.symmetric(vertical: 12.0),
+                decoration: const InputDecoration(
+                  contentPadding: EdgeInsets.symmetric(vertical: 0),
                   filled: true,
-                  enabledBorder: OutlineInputBorder(
-                    borderSide: customBorderSide,
-                  ),
-                  focusedBorder:
-                      OutlineInputBorder(borderSide: customBorderSide),
+                  border: InputBorder.none,
                 ),
                 controller: TextEditingController(
                     text: proximoHorario?.format(context)),
               ),
               const SizedBox(
-                height: 38,
+                height: 40,
               ),
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
@@ -106,9 +108,8 @@ class _HomeState extends State<Home> {
                       },
                       style: ElevatedButton.styleFrom(
                         fixedSize: const Size(75, 75),
-                        elevation: 10,
-                        shadowColor: customWhite,
-                        backgroundColor: customGrey,
+                        elevation: 4,
+                        backgroundColor: lightColor,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(50),
                         ),
@@ -116,8 +117,8 @@ class _HomeState extends State<Home> {
                       ),
                       child: Icon(
                         Icons.settings,
-                        color: customWhite,
-                        size: 55,
+                        color: darkColor,
+                        size: 60,
                       )),
                 ],
               ),
@@ -134,8 +135,7 @@ class _HomeState extends State<Home> {
                     },
                     style: ElevatedButton.styleFrom(
                       fixedSize: const Size(150, 150),
-                      elevation: 10,
-                      shadowColor: customWhite,
+                      elevation: 4,
                       backgroundColor: customYellow,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(100),
@@ -144,7 +144,8 @@ class _HomeState extends State<Home> {
                     ),
                     child: Text(
                       'ABRIR',
-                      style: TextStyle(color: customGrey, fontSize: 40),
+                      style: TextStyle(
+                          color: lightColor, fontSize: 35, fontFamily: 'Jua'),
                     )),
               ),
             ],
