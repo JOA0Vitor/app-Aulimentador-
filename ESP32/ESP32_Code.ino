@@ -32,9 +32,11 @@ void setupWifi() {
 
 // Reset Wi-Fi
 void resetWifi() {
-  WiFi.disconnect(true);
-  delay(2000);
-  ESP.restart();
+  WiFiManager wifiManager;
+  wifiManager.resetSettings(); // Reseta as configurações do WiFiManager
+  WiFi.disconnect(true); // Desconecta e remove as credenciais armazenadas
+  delay(2000); // Aguarda 2 segundos
+  ESP.restart(); // Reinicia a ESP32
 }
 
 // Conexão MQTT
@@ -164,7 +166,7 @@ void callback(char* topic, byte* message, unsigned int length) {
     }
     saveHorariosToNVS(); // Salva os horários recebidos na NVS
     Serial.println("Schedule updated via MQTT");
-  // Listar Horários
+  // Resetar Conexão
   } else if (String(topic) == "esp32/reset") {
     resetWifi();
   }
@@ -214,6 +216,15 @@ void loop() {
     reconnect();
   }
   client.loop();
+
+  if (Serial.available() > 0) {
+    String command = Serial.readStringUntil('\n'); // Lê o comando da serial
+    command.trim(); // Remove espaços em branco extras
+
+    if (command == "resetWifi") {
+      resetWifi(); // Chama a função resetWifi
+    }
+  }
 
   time_t now = time(nullptr);
   struct tm timeinfo;
