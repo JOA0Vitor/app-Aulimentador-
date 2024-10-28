@@ -9,6 +9,10 @@ void main() async {
   final horarioProvider = HorarioProvider();
   await horarioProvider.loadHorarios();
 
+  final themeProvider = ThemeProvider();
+  final isDarkTheme = await themeProvider.loadThemePreference();
+  themeProvider.setTheme(isDarkTheme);
+
   runApp(
     MultiProvider(
       providers: [

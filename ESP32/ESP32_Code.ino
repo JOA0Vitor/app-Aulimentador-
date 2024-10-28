@@ -1,9 +1,3 @@
-// DESCRIÇÃO DO PROJETO AULIMENTADOR
-// O projeto tem como objetivo criar um alimentador automatico simples para animais de estimação
-// O projeto é composto por um ESP32, um servo motor e um aplicativo de celular
-// O aplicativo possui uma pagina inicial com o botão ABRIR que envia uma mensagem para que o ESP32 abra o alimentador
-// O aplicativo tambêm possui uma página para configurar horários de alimentação, automatizando a abertura
-
 #include <WiFi.h>
 #include <WiFiClientSecure.h>
 #include <PubSubClient.h>
@@ -13,11 +7,37 @@
 #include <Preferences.h>
 #include <WiFiManager.h>
 #include <vector>
+#include "config.h"
+
+// Objeto Preferences para armazenar dados na NVS
+Preferences preferences;
+
+// Cliente MQTT
+WiFiClientSecure espClient;
+PubSubClient client(espClient);
+
+// Servo Motor
+Servo myServo;
+
+// Duração de abertura do Servo
+int openDuration; 
+
+// Controle de Fechamento do Servo
+unsigned long startMillis;
+bool isServoOpen = false;
+
+// Estrutura para armazenar horários
+struct Horario {
+  int hour;
+  int minute;
+};
+
+// Vetor de horários
+std::vector<Horario> horarios;
 
 // Conexão Wi-Fi
 void setupWifi() {
   WiFiManager wifiManager;
-
   // Tenta conectar à última rede conhecida ou abre o portal de configuração
   if (!wifiManager.autoConnect("Aulimentador_AP")) {
     Serial.println("Falha ao conectar e sem conexão salva. Reiniciando...");
@@ -30,7 +50,7 @@ void setupWifi() {
   Serial.println(WiFi.localIP());
 }
 
-// Reset Wi-Fi
+// Resetar Wi-Fi
 void resetWifi() {
   WiFiManager wifiManager;
   wifiManager.resetSettings(); // Reseta as configurações do WiFiManager
@@ -39,79 +59,23 @@ void resetWifi() {
   ESP.restart(); // Reinicia a ESP32
 }
 
-// Conexão MQTT
-const char* mqtt_server = "8ffbe34a8726422889963a6bb3a812fa.s1.eu.hivemq.cloud"; // Cluster URI
-const int mqtt_port = 8883; // Porta
-const char* mqtt_user = "Aulimentador"; // Usuário MQTT
-const char* mqtt_pass = "Miaulimenta1"; // Senha MQTT
-
-WiFiClientSecure espClient;
-PubSubClient client(espClient);
-
+// Configurar o MQTT
 void setupMQTT() {
   client.setServer(mqtt_server, mqtt_port);
   client.setCallback(callback);
 }
 
-// Servo Motor
-Servo myServo;
+// Salvar horários na NVS
+void saveHorariosToNVS() {
+  preferences.putInt("numHorarios", horarios.size());
+  for (int i = 0; i < horarios.size(); i++) {
+    preferences.putInt(("hour_" + String(i)).c_str(), horarios[i].hour);
+    preferences.putInt(("minute_" + String(i)).c_str(), horarios[i].minute);
+  }
+  Serial.println("Horários salvos na NVS");
+}
 
-// Estrutura para armazenar horários
-struct Horario {
-  int hour;
-  int minute;
-};
-
-// Vetor de horários
-std::vector<Horario> horarios;
-
-// Certificado da Autoridade Certificadora do HiveMQ
-static const char *root_ca PROGMEM = R"EOF(
------BEGIN CERTIFICATE-----
-MIIFazCCA1OgAwIBAgIRAIIQz7DSQONZRGPgu2OCiwAwDQYJKoZIhvcNAQELBQAw
-TzELMAkGA1UEBhMCVVMxKTAnBgNVBAoTIEludGVybmV0IFNlY3VyaXR5IFJlc2Vh
-cmNoIEdyb3VwMRUwEwYDVQQDEwxJU1JHIFJvb3QgWDEwHhcNMTUwNjA0MTEwNDM4
-WhcNMzUwNjA0MTEwNDM4WjBPMQswCQYDVQQGEwJVUzEpMCcGA1UEChMgSW50ZXJu
-ZXQgU2VjdXJpdHkgUmVzZWFyY2ggR3JvdXAxFTATBgNVBAMTDElTUkcgUm9vdCBY
-MTCCAiIwDQYJKoZIhvcNAQEBBQADggIPADCCAgoCggIBAK3oJHP0FDfzm54rVygc
-h77ct984kIxuPOZXoHj3dcKi/vVqbvYATyjb3miGbESTtrFj/RQSa78f0uoxmyF+
-0TM8ukj13Xnfs7j/EvEhmkvBioZxaUpmZmyPfjxwv60pIgbz5MDmgK7iS4+3mX6U
-A5/TR5d8mUgjU+g4rk8Kb4Mu0UlXjIB0ttov0DiNewNwIRt18jA8+o+u3dpjq+sW
-T8KOEUt+zwvo/7V3LvSye0rgTBIlDHCNAymg4VMk7BPZ7hm/ELNKjD+Jo2FR3qyH
-B5T0Y3HsLuJvW5iB4YlcNHlsdu87kGJ55tukmi8mxdAQ4Q7e2RCOFvu396j3x+UC
-B5iPNgiV5+I3lg02dZ77DnKxHZu8A/lJBdiB3QW0KtZB6awBdpUKD9jf1b0SHzUv
-KBds0pjBqAlkd25HN7rOrFleaJ1/ctaJxQZBKT5ZPt0m9STJEadao0xAH0ahmbWn
-OlFuhjuefXKnEgV4We0+UXgVCwOPjdAvBbI+e0ocS3MFEvzG6uBQE3xDk3SzynTn
-jh8BCNAw1FtxNrQHusEwMFxIt4I7mKZ9YIqioymCzLq9gwQbooMDQaHWBfEbwrbw
-qHyGO0aoSCqI3Haadr8faqU9GY/rOPNk3sgrDQoo//fb4hVC1CLQJ13hef4Y53CI
-rU7m2Ys6xt0nUW7/vGT1M0NPAgMBAAGjQjBAMA4GA1UdDwEB/wQEAwIBBjAPBgNV
-HRMBAf8EBTADAQH/MB0GA1UdDgQWBBR5tFnme7bl5AFzgAiIyBpY9umbbjANBgkq
-hkiG9w0BAQsFAAOCAgEAVR9YqbyyqFDQDLHYGmkgJykIrGF1XIpu+ILlaS/V9lZL
-ubhzEFnTIZd+50xx+7LSYK05qAvqFyFWhfFQDlnrzuBZ6brJFe+GnY+EgPbk6ZGQ
-3BebYhtF8GaV0nxvwuo77x/Py9auJ/GpsMiu/X1+mvoiBOv/2X/qkSsisRcOj/KK
-NFtY2PwByVS5uCbMiogziUwthDyC3+6WVwW6LLv3xLfHTjuCvjHIInNzktHCgKQ5
-ORAzI4JMPJ+GslWYHb4phowim57iaztXOoJwTdwJx4nLCgdNbOhdjsnvzqvHu7Ur
-TkXWStAmzOVyyghqpZXjFaH3pO3JLF+l+/+sKAIuvtd7u+Nxe5AW0wdeRlN8NwdC
-jNPElpzVmbUq4JUagEiuTDkHzsxHpFKVK7q4+63SM1N95R1NbdWhscdCb+ZAJzVc
-oyi3B43njTOQ5yOf+1CceWxG1bQVs5ZufpsMljq4Ui0/1lvh+wjChP4kqKOJ2qxq
-4RgqsahDYVvTH9w7jXbyLeiNdd8XM2w9U/t7y0Ff/9yi0GE44Za4rF2LN9d11TPA
-mRGunUHBcnWEvgJBQl9nJEiU0Zsnvgc/ubhPgXRR4Xq37Z0j4r7g1SgEEzwxA57d
-emyPxgcYxn/eR44/KJ4EBs+lVDR3veyJm+kXQ99b21/+jh5Xos1AnX5iItreGCc=
------END CERTIFICATE-----
-)EOF";
-
-// Objeto Preferences para armazenar dados na NVS
-Preferences preferences;
-
-unsigned long startMillis;
-bool isServoOpen = false;
-
-// Configuração do servidor NTP para o Brasil (Horário de Brasília)
-const char* ntpServer = "pool.ntp.org";
-const long  gmtOffset_sec = -10800; // UTC-3 para Horário de Brasília
-const int   daylightOffset_sec = 0; // Sem horário de verão
-
-// Carregar dados da NVS
+// Carregar horários na NVS
 void loadHorariosFromNVS() {
   int numHorarios = preferences.getInt("numHorarios", 0);
   horarios.clear();
@@ -124,14 +88,25 @@ void loadHorariosFromNVS() {
   Serial.println("Horários carregados da NVS");
 }
 
-// Função para salvar horários na NVS
-void saveHorariosToNVS() {
-  preferences.putInt("numHorarios", horarios.size());
-  for (int i = 0; i < horarios.size(); i++) {
-    preferences.putInt(("hour_" + String(i)).c_str(), horarios[i].hour);
-    preferences.putInt(("minute_" + String(i)).c_str(), horarios[i].minute);
+// Salvar angulo e duração na NVS
+void saveConfigToNVS() {
+  preferences.putInt("openDuration", openDuration);
+  Serial.println("Configuração do Servo salva na NVS");
+}
+
+// Carregar duração da NVS
+void loadConfigFromNVS() {
+  // Verifica se o valor está armazenado na NVS
+  if (preferences.isKey("openDuration")) {
+    openDuration = preferences.getInt("openDuration", 3000); // Carrega o valor salvo ou 3000ms como padrão
+    Serial.println("Configuração do Servo carregada da NVS");
+  } else {
+    Serial.println("Configuração do Servo não encontrada na NVS, usando valores padrão");
   }
-  Serial.println("Horários salvos na NVS");
+
+  // Imprime o valor carregado para verificação
+  Serial.print("Duração de abertura: ");
+  Serial.println(openDuration);
 }
 
 // Tratamento de Mensagens MQTT
@@ -145,14 +120,17 @@ void callback(char* topic, byte* message, unsigned int length) {
     incomingMessage += (char)message[i];
   }
   
+  // TÓPICOS
+
   // Abrir
   if (String(topic) == "esp32/servo") {
     if (incomingMessage == "open") {
       Serial.println("Servo aberto!");
-      myServo.write(90);
+      myServo.write(45);
       startMillis = millis();
       isServoOpen = true;
     }
+
   // Horários
   } else if (String(topic) == "esp32/horarios") {
     DynamicJsonDocument doc(1024);
@@ -163,12 +141,22 @@ void callback(char* topic, byte* message, unsigned int length) {
       h.hour = horario["hour"];
       h.minute = horario["minute"];
       horarios.push_back(h);
-    }
+    }    
     saveHorariosToNVS(); // Salva os horários recebidos na NVS
     Serial.println("Schedule updated via MQTT");
+
   // Resetar Conexão
   } else if (String(topic) == "esp32/reset") {
     resetWifi();
+
+  // Configuração do Servo
+  } else if (String(topic) == "esp32/config") {
+    Serial.println("Configuração recebida via MQTT");
+    DynamicJsonDocument doc(1024);
+    deserializeJson(doc, incomingMessage);
+    openDuration = doc["openDuration"];
+    saveConfigToNVS(); // Salva a configuração recebida na NVS
+    Serial.println("Configuração do Servo Atualizada");
   }
 }
 
@@ -180,7 +168,7 @@ void reconnect() {
       Serial.println("connected");
       client.subscribe("esp32/servo");
       client.subscribe("esp32/horarios");
-      client.subscribe("esp32/lista");
+      client.subscribe("esp32/config");
       client.subscribe("esp32/reset");
     } else {
       Serial.print("failed, rc=");
@@ -208,10 +196,12 @@ void setup() {
   loadHorariosFromNVS(); // Carrega os horários armazenados
 }
 
-int lastExecutedSecond = -1;
-
 // Loop
 void loop() {
+  time_t now = time(nullptr);
+  struct tm timeinfo;
+  int lastExecutedSecond = -1;
+
   if (!client.connected()) {
     reconnect();
   }
@@ -226,9 +216,6 @@ void loop() {
     }
   }
 
-  time_t now = time(nullptr);
-  struct tm timeinfo;
-
   if (!getLocalTime(&timeinfo)) {
     Serial.println("Falha ao obter o tempo local.");
     return;
@@ -239,7 +226,7 @@ void loop() {
         timeinfo.tm_min == horario.minute && 
         timeinfo.tm_sec == 0 &&
         timeinfo.tm_sec != lastExecutedSecond) {
-      myServo.write(90); 
+      myServo.write(45); 
       startMillis = millis();
       isServoOpen = true;
       Serial.println("Servo acionado no horário definido!");
@@ -248,7 +235,7 @@ void loop() {
     }
   }
 
-  if (isServoOpen && millis() - startMillis >= 5000) {
+  if (isServoOpen && millis() - startMillis >= openDuration) {
     myServo.write(0);
     isServoOpen = false;
     Serial.println("Servo fechado!");

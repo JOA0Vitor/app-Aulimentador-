@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:aulimentador/mqtt_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
 
 class Home extends StatefulWidget {
@@ -24,6 +25,16 @@ class _HomeState extends State<Home> {
     super.initState();
     mqttService.connect();
     _startTimer();
+  }
+
+  Future<void> saveThemePreference(bool isDarkTheme) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isDarkTheme', isDarkTheme);
+  }
+
+  Future<bool> loadThemePreference() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool('isDarkTheme') ?? false; // false é o valor padrão
   }
 
   void _startTimer() {
@@ -144,7 +155,7 @@ class _HomeState extends State<Home> {
                         padding: const EdgeInsets.all(4),
                       ),
                       child: Icon(
-                        Icons.settings,
+                        Icons.schedule,
                         color: darkColor,
                         size: 60,
                       )),
@@ -163,7 +174,7 @@ class _HomeState extends State<Home> {
                       );
                     },
                     style: ElevatedButton.styleFrom(
-                      fixedSize: const Size(150, 150),
+                      fixedSize: const Size(175, 175),
                       elevation: 4,
                       backgroundColor: customYellow,
                       shape: RoundedRectangleBorder(
@@ -174,7 +185,7 @@ class _HomeState extends State<Home> {
                     child: Text(
                       'ABRIR',
                       style: TextStyle(
-                          color: lightColor, fontSize: 35, fontFamily: 'Jua'),
+                          color: lightColor, fontSize: 40, fontFamily: 'Jua'),
                     )),
               ),
             ],

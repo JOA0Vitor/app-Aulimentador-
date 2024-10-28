@@ -23,6 +23,24 @@ class Horario {
   }
 }
 
+class ServoConfig {
+  final int openDuration;
+
+  ServoConfig({required this.openDuration});
+
+  Map<String, dynamic> toJson() {
+    return {
+      'openDuration': openDuration,
+    };
+  }
+
+  static ServoConfig fromJson(Map<String, dynamic> json) {
+    return ServoConfig(
+      openDuration: json['openDuration'],
+    );
+  }
+}
+
 class HorarioProvider with ChangeNotifier {
   List<Horario> _horarios = [];
   List<Horario> get horarios => _horarios;
@@ -35,6 +53,14 @@ class HorarioProvider with ChangeNotifier {
     _horarios.add(horario);
     saveHorarios();
     notifyListeners();
+  }
+
+  void updateHorario(int index, Horario novoHorario) {
+    if (index >= 0 && index < _horarios.length) {
+      _horarios[index] = novoHorario;
+      saveHorarios(); // Salva a lista atualizada
+      notifyListeners(); // Notifica os ouvintes para atualizar a interface
+    }
   }
 
   void removeHorario(int index) {
@@ -68,5 +94,36 @@ class HorarioProvider with ChangeNotifier {
       }
     }
     return null;
+  }
+}
+
+class ServoConfigProvider with ChangeNotifier {
+  ServoConfig _servoConfig = ServoConfig(openDuration: 3);
+  ServoConfig get servoConfig => _servoConfig;
+
+  ServoConfigProvider() {
+    loadServoConfig();
+  }
+
+  void setServoConfig(ServoConfig servoConfig) {
+    _servoConfig = servoConfig;
+    saveServoConfig();
+    notifyListeners();
+  }
+
+  Future<void> saveServoConfig() async {
+    final prefs = await SharedPreferences.getInstance();
+    prefs.setString('servoConfig', jsonEncode(_servoConfig.toJson()));
+  }
+
+  Future<void> loadServoConfig() async {
+    final prefs = await SharedPreferences.getInstance();
+    final servoConfigString = prefs.getString('servoConfig');
+    if (servoConfigString != null) {
+      final Map<String, dynamic> servoConfigJson =
+          jsonDecode(servoConfigString);
+      _servoConfig = ServoConfig.fromJson(servoConfigJson);
+      notifyListeners();
+    }
   }
 }

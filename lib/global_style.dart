@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 Color customWhite = Colors.white;
 Color customBlue = Colors.blue;
@@ -29,6 +30,21 @@ class ThemeProvider with ChangeNotifier {
       _isDarkMode ? Colors.grey[800]! : customGrey; // Cor do fundo do botão
   Color get buttonTextColor =>
       _isDarkMode ? customWhite : customYellow; // Cor do texto do botão
+
+  void setTheme(bool isDarkMode) {
+    _isDarkMode = isDarkMode;
+    notifyListeners();
+  }
+
+  Future<void> saveThemePreference(bool isDarkTheme) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isDarkTheme', isDarkTheme);
+  }
+
+  Future<bool> loadThemePreference() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool('isDarkTheme') ?? false;
+  }
 
   void toggleTheme() {
     _isDarkMode = !_isDarkMode;

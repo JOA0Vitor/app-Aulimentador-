@@ -118,6 +118,16 @@ class MqttService {
     print('Horários enviados!');
   }
 
+  // Mensagem MQTT para enviar configuração do servo
+  Future<void> enviarConfigServo(int duration) async {
+    final builder = MqttClientPayloadBuilder();
+    final payload = jsonEncode({'openDuration': duration});
+    builder.addString(payload);
+    client.publishMessage(
+        'esp32/config', MqttQos.atLeastOnce, builder.payload!);
+    print('Configuração enviada: $duration ms');
+  }
+
   // Mensagem MQTT para resetar a conexão WiFi
   Future<void> resetarWifi() async {
     if (client.connectionStatus!.state == MqttConnectionState.connected) {
