@@ -1,7 +1,6 @@
 import 'package:aulimentador/global_style.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
-import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:aulimentador/mqtt_service.dart';
 import 'package:aulimentador/controller.dart';
