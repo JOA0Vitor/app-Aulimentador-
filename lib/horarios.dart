@@ -313,7 +313,7 @@ class _HorariosState extends State<Horarios> {
                                             ),
                                           ),
                                           onPressed: () {
-                                            mqttService.enviarConfigServo(3000);
+                                            mqttService.enviarConfigServo(1000);
                                             Navigator.of(context).pop();
                                             ScaffoldMessenger.of(context)
                                                 .showSnackBar(
@@ -347,7 +347,7 @@ class _HorariosState extends State<Horarios> {
                                             ),
                                           ),
                                           onPressed: () {
-                                            mqttService.enviarConfigServo(6000);
+                                            mqttService.enviarConfigServo(2000);
                                             Navigator.of(context).pop();
                                             ScaffoldMessenger.of(context)
                                                 .showSnackBar(
@@ -380,7 +380,7 @@ class _HorariosState extends State<Horarios> {
                                           ),
                                         ),
                                         onPressed: () {
-                                          mqttService.enviarConfigServo(9000);
+                                          mqttService.enviarConfigServo(3000);
                                           Navigator.of(context).pop();
                                           ScaffoldMessenger.of(context)
                                               .showSnackBar(
